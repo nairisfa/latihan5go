@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bufio"
-	"fmt"
 	"lala/asal/internal/todo"
-	"os"
+	"net/http"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -12,8 +10,6 @@ import (
 
 // Initialize the database connection
 func main() {
-
-	
 	// Buka database menggunakan driver baru
 	db, err := gorm.Open(postgres.Open("postgres://postgres:123456@localhost:5432/postgres"), &gorm.Config{})
 	if err != nil {
@@ -22,34 +18,12 @@ func main() {
 
 	todo.Migrate(db)
 
-	scanner := bufio.NewScanner(os.Stdin)
+	mux := todo.GetRouteHandler(db)
 
-		fmt.Print("Todo: ")
-		scanner.Scan()
-		name := scanner.Text()
-		
-		fmt.Print("Done?: ")
-		scanner.Scan()
-		check := scanner.Text()
-		var checked bool
+	srv := &http.Server{
+		Addr:    ":8080",
+		Handler: mux,
+	}
 
-
-		if check == "y"{
-			checked = true
-		} else {
-			checked = false
-
-		}
-
-		todo.CreateTodo(db, name, checked)
-
-		
-			
-		fmt.Print(todo.FindAllTodos(db))
-		fmt.Println("delete: ")
-		scanner.Scan()
-		name1:= scanner.Text()
-
-		todo.DeleteTodos(db, name1)
-		fmt.Print(todo.FindAllTodos(db))
+	srv.ListenAndServe()
 }
